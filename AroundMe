@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realtor.com Commute Search - Simple</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            border-left: 4px solid #2196F3;
+            font-size: 14px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .big-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 15px 0;
+        }
+        .big-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        .url-display {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            word-break: break-all;
+            margin: 15px 0;
+            border: 1px solid #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+        }
+        .extracted-address {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #2e7d32;
+            display: none;
+            border-left: 4px solid #4caf50;
+        }
+        .extracted-address.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Realtor.com Commute Search</h1>
+        <p class="subtitle">v3.0</p>
+        
+        <div class="info">
+            <strong>How this works:</strong><br>
+            1. Paste a listing URL or type an address - the search link generates automatically!<br>
+            2. Adjust filters and commute time as needed<br>
+            3. Click "Open on Realtor.com"<br>
+            4. Realtor.com will open with your address pre-filled in the commute search - just verify it's correct!
+        </div>
+
+        <div>
+            <label for="address">Listing URL or Address:</label>
+            <input type="text" id="address" placeholder="Paste listing URL or type address" autofocus>
+            <div id="extractedAddress" class="extracted-address"></div>
+
+            <div id="listingLink" style="display: none; margin-bottom: 16px;">
+                <a id="listingLinkHref" href="#" target="_blank" style="
+                    display: inline-block;
+                    padding: 10px 16px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)'" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(102, 126, 234, 0.3)'">
+                    🏠 View Original Listing
+                </a>
+            </div>
+
+            <div id="coordinateDisplay" class="extracted-address" style="background: #fff7ed; border-left-color: #f97316;">
+                <strong>🌍 Coordinates Found:</strong>
+                <div id="coordinateText" style="margin-top: 5px; font-family: 'Courier New', monospace;"></div>
+            </div>
+            
+            <label for="time">Commute Time:</label>
+            <select id="time">
+                <option value="10m">10 minutes</option>
+                <option value="20m">20 minutes</option>
+                <option value="30m" selected>30 minutes</option>
+                <option value="40m">40 minutes</option>
+                <option value="50m">50 minutes</option>
+                <option value="60m">60 minutes</option>
+            </select>
+
+            <div style="margin: 20px 0; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 0;">
+                    <input type="checkbox" id="commuteOnly" style="width: auto; margin-right: 10px; cursor: pointer;">
+                    <span style="color: #0c4a6e; font-weight: 600;">Commute Only (no property filters)</span>
+                </label>
+                <p style="font-size: 12px; color: #64748b; margin: 8px 0 0 0; line-height: 1.4;">Check this to search only by commute distance, without any bedroom/price/lot filters</p>
+            </div>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">
+            <h3 style="color: #555; margin-bottom: 20px; font-size: 18px;">🔍 Filters</h3>
+
+            <label for="propertyType">Property Type:</label>
+            <select id="propertyType">
+                <option value="">Any</option>
+                <option value="single-family-home" selected>Single Family Home</option>
+                <option value="condo">Condo</option>
+                <option value="townhome">Townhome</option>
+            </select>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label for="minBeds">Min Beds:</label>
+                    <input type="number" id="minBeds" value="2" min="0">
+                </div>
+                <div>
+                    <label for="minBaths">Min Baths:</label>
+                    <input type="number" id="minBaths" value="1" min="0" step="0.5">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label for="minPrice">Min Price:</label>
+                    <input type="number" id="minPrice" placeholder="No min" step="1000">
+                </div>
+                <div>
+                    <label for="maxPrice">Max Price:</label>
+                    <input type="number" id="maxPrice" value="250000" step="1000">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label for="minLotSize">Min Lot (sq ft):</label>
+                    <input type="number" id="minLotSize" placeholder="Any" step="1000">
+                </div>
+                <div>
+                    <label for="maxLotSize">Max Lot (sq ft):</label>
+                    <input type="number" id="maxLotSize" value="9000" step="1000">
+                </div>
+            </div>
+        </div>
+
+        <div class="result" id="result">
+            <h3 style="margin-bottom: 15px;">Your Search is Ready!</h3>
+            <a id="realtorLink" href="#" target="_blank" class="big-link">
+                🔗 Open on Realtor.com
+            </a>
+            <p style="font-size: 13px; color: #666; margin-top: 10px; line-height: 1.5;">
+                <strong>What happens next:</strong> Realtor.com will open with the commute filter active and your address 
+                (<strong style="color: #333;">${address}</strong>) pre-filled. All your other filters are already applied. 
+                Just verify the address is correct and the map will update!
+            </p>
+            <details style="margin-top: 15px;">
+                <summary style="cursor: pointer; color: #667eea; font-weight: 600;">Show URL</summary>
+                <div class="url-display" id="urlOutput"></div>
+                <button type="button" onclick="copyUrl()" style="width: auto; padding: 10px 20px; background: #28a745; margin-top: 10px;">
+                    📋 Copy URL
+                </button>
+            </details>
+        </div>
+
+        <div class="result" id="nearbyEssentials" style="margin-top: 20px;">
+            <h3 style="margin-bottom: 15px;">📍 Nearby Essentials</h3>
+            <div id="nearbyContent" style="font-family: monospace; font-size: 13px; line-height: 1.8; white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;"></div>
+            <button type="button" onclick="copyNearby()" style="width: auto; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                📋 Copy to Clipboard
+            </button>
+        </div>
+
+        <!-- Buy Me A Coffee Button -->
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+            <p style="color: #666; margin-bottom: 15px; font-size: 14px;">Enjoying this tool? ☕</p>
+            <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="AndrewTech" data-color="#FFDD00" data-emoji=""  data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+        </div>
+    </div>
+
+    <script>
+        let generatedUrl = '';
+        let nearbyText = '';
+
+        // Extract address from listing URLs
+        function extractAddressFromUrl(input) {
+            if (!input.includes('http') && !input.includes('.com')) {
+                return input;
+            }
+
+            try {
+                const url = new URL(input);
+                const pathname = url.pathname;
+
+                // Homes.com
+                if (url.hostname.includes('homes.com')) {
+                    const match = pathname.match(/\/property\/([^\/]+)\//);
+                    if (match) {
+                        const slug = match[1];
+                        const parts = slug.split('-');
+                        
+                        // Work RIGHT to LEFT starting from state
+                        // Last part should be state (2 letters)
+                        const stateIdx = parts.length - 1;
+                        const state = parts[stateIdx];
+                        
+                        if (state && state.length === 2) {
+                            // City is usually 1-2 words before state
+                            // Look backwards for where the city ends (before street number/name)
+                            let cityEndIdx = stateIdx - 1;
+                            let cityStartIdx = cityEndIdx;
+                            
+                            // City ends at cityEndIdx, now find where it starts
+                            // Go backwards until we hit a number (street number) or get 2 words
+                            let cityWords = 0;
+                            for (let i = cityEndIdx; i >= 0; i--) {
+                                if (!isNaN(parts[i])) {
+                                    // Hit a number, city starts after this
+                                    cityStartIdx = i + 1;
+                                    break;
+                                }
+                                cityWords++;
+                                if (cityWords >= 2) {
+                                    // Got 2 city words, assume city starts here
+                                    cityStartIdx = i;
+                                    break;
+                                }
+                            }
+                            
+                            const street = parts.slice(0, cityStartIdx).map((p, i) => 
+                                !isNaN(p) ? p : p.charAt(0).toUpperCase() + p.slice(1)
+                            ).join(' ');
+                            const city = parts.slice(cityStartIdx, stateIdx).map(p => 
+                                p.charAt(0).toUpperCase() + p.slice(1)
+                            ).join(' ');
+                            
+                            return `${street}, ${city}, ${state.toUpperCase()}`;
+                        }
+                    }
+                }
+
+                // Zillow
+                if (url.hostname.includes('zillow.com')) {
+                    const match = pathname.match(/\/homedetails\/([^\/]+)\//);
+                    if (match) {
+                        const parts = match[1].split('-');
+                        const zip = parts[parts.length - 1];
+                        const state = parts[parts.length - 2];
+                        
+                        let cityStartIdx = parts.length - 3;
+                        for (let i = parts.length - 3; i >= 0; i--) {
+                            if (['Dr', 'Ave', 'St', 'Ln', 'Rd', 'Ct', 'Pl', 'Way', 'Cir', 'Blvd'].includes(parts[i]) || 
+                                !isNaN(parts[i])) {
+                                cityStartIdx = i + 1;
+                                break;
+                            }
+                        }
+                        
+                        const street = parts.slice(0, cityStartIdx).map((p, i) => 
+                            !isNaN(p) ? p : p.charAt(0).toUpperCase() + p.slice(1)
+                        ).join(' ');
+                        const city = parts.slice(cityStartIdx, parts.length - 2).map(p => 
+                            p.charAt(0).toUpperCase() + p.slice(1)
+                        ).join(' ');
+                        
+                        return `${street}, ${city}, ${state} ${zip}`;
+                    }
+                }
+
+                return input;
+            } catch (e) {
+                return input;
+            }
+        }
+
+        // Show extracted address in real-time
+        document.getElementById('address').addEventListener('input', function(e) {
+            const input = e.target.value;
+            const extractedEl = document.getElementById('extractedAddress');
+            const listingLinkEl = document.getElementById('listingLink');
+            const listingLinkHref = document.getElementById('listingLinkHref');
+            
+            let finalAddress = input;
+            
+            // Check if it's a URL
+            if (input.includes('http') || input.includes('.com')) {
+                const extracted = extractAddressFromUrl(input);
+                console.log('Original input:', input);
+                console.log('Extracted address:', extracted);
+                
+                if (extracted !== input) {
+                    finalAddress = extracted;
+                    extractedEl.innerHTML = `<strong>✓ Extracted:</strong> ${extracted}`;
+                    extractedEl.classList.add('show');
+                    
+                    // Show link back to listing
+                    listingLinkHref.href = input;
+                    listingLinkEl.style.display = 'block';
+                } else {
+                    extractedEl.classList.remove('show');
+                    listingLinkEl.style.display = 'none';
+                }
+            } else {
+                // It's a plain address - try to fix missing comma
+                finalAddress = smartFixAddress(input);
+                if (finalAddress !== input) {
+                    console.log('Fixed address:', finalAddress);
+                }
+                extractedEl.classList.remove('show');
+                listingLinkEl.style.display = 'none';
+            }
+            
+            // Auto-generate URL
+            generateUrl();
+        });
+
+        // Smart function to fix addresses missing comma after street
+        function smartFixAddress(address) {
+            // Check if there are at least 2 commas (street, city, state)
+            const commaCount = (address.match(/,/g) || []).length;
+            
+            if (commaCount >= 2) {
+                // Already properly formatted
+                return address;
+            }
+            
+            // Try to detect pattern: "123 Street Name CityName, STATE ZIP"
+            // Look for state abbreviations (2 capital letters after a comma)
+            const stateMatch = address.match(/,\s*([A-Z]{2})\s+\d{5}/);
+            if (stateMatch) {
+                // Found state, now find where city starts
+                // City usually starts after the last all-caps word before the comma
+                const beforeState = address.substring(0, stateMatch.index);
+                
+                // Split by spaces and look for capitalized words (city name)
+                const words = beforeState.trim().split(/\s+/);
+                
+                // Find where the city likely starts (after street suffix like Dr, St, Ave, Ln, etc)
+                let cityStartIdx = -1;
+                const streetSuffixes = ['Dr', 'Drive', 'St', 'Street', 'Ave', 'Avenue', 'Ln', 'Lane', 'Rd', 'Road', 'Ct', 'Court', 'Pl', 'Place', 'Way', 'Cir', 'Circle', 'Blvd', 'Boulevard'];
+                
+                for (let i = 0; i < words.length; i++) {
+                    if (streetSuffixes.includes(words[i])) {
+                        cityStartIdx = i + 1;
+                        break;
+                    }
+                }
+                
+                if (cityStartIdx > 0 && cityStartIdx < words.length) {
+                    const street = words.slice(0, cityStartIdx).join(' ');
+                    const city = words.slice(cityStartIdx).join(' ');
+                    const stateAndZip = address.substring(stateMatch.index + 1).trim();
+                    return `${street}, ${city}, ${stateAndZip}`;
+                }
+            }
+            
+            // If we can't fix it, return original
+            return address;
+        }
+
+        // Auto-generate when any filter changes
+        ['time', 'propertyType', 'minBeds', 'minBaths', 'minPrice', 'maxPrice', 'minLotSize', 'maxLotSize'].forEach(id => {
+            document.getElementById(id).addEventListener('change', generateUrl);
+            document.getElementById(id).addEventListener('input', generateUrl);
+        });
+
+        // Listen for commute-only checkbox
+        document.getElementById('commuteOnly').addEventListener('change', generateUrl);
+
+        function generateUrl() {
+            const input = document.getElementById('address').value;
+            
+            // Reset/clear previous results (but NOT listingLink - input listener handles that)
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('extractedAddress').classList.remove('show');
+            document.getElementById('coordinateDisplay').classList.remove('show');
+            document.getElementById('nearbyEssentials').classList.remove('show');
+            
+            // Reset coordinate display styling
+            const coordinateDisplay = document.getElementById('coordinateDisplay');
+            coordinateDisplay.style.background = '#fff7ed';
+            coordinateDisplay.style.borderLeftColor = '#f97316';
+            document.getElementById('coordinateText').innerHTML = '';
+            
+            // Don't generate if address is empty
+            if (!input || input.trim() === '') {
+                return;
+            }
+            
+            // Determine if it's a URL or address and get the final address
+            let address;
+            if (input.includes('http') || input.includes('.com')) {
+                address = extractAddressFromUrl(input);
+            } else {
+                address = smartFixAddress(input);
+            }
+            
+            const time = document.getElementById('time').value;
+            const commuteOnly = document.getElementById('commuteOnly').checked;
+            
+            // Build filters (skip if commute-only is checked)
+            const filters = [];
+            
+            if (!commuteOnly) {
+                const propertyType = document.getElementById('propertyType').value;
+                const minBeds = document.getElementById('minBeds').value;
+                const minBaths = document.getElementById('minBaths').value;
+                const minPrice = document.getElementById('minPrice').value;
+                const maxPrice = document.getElementById('maxPrice').value;
+                const minLotSize = document.getElementById('minLotSize').value;
+                const maxLotSize = document.getElementById('maxLotSize').value;
+                
+                if (propertyType) filters.push(`type-${propertyType}`);
+                if (minBeds) filters.push(`beds-${minBeds}`);
+                if (minBaths) filters.push(`baths-${minBaths}`);
+                if (minLotSize || maxLotSize) {
+                    filters.push(`lot-sqft-${minLotSize || '0'}-${maxLotSize || ''}`);
+                }
+                if (minPrice || maxPrice) {
+                    filters.push(`price-${minPrice || 'na'}-${maxPrice || ''}`);
+                }
+            }
+            
+            // Extract city/state for the base path (JUST city and state, not full address)
+            const addressParts = address.split(',').map(s => s.trim());
+            let cityState = 'search';
+            let formattedAddress = address.replace(/,/g, '_').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9_-]/g, '');
+            
+            if (addressParts.length >= 2) {
+                // Get city (second to last part)
+                const city = addressParts[addressParts.length - 2].replace(/\s+/g, '_');
+                // Get state from last part (split by space to handle "TN 37343" format)
+                const lastPart = addressParts[addressParts.length - 1].trim();
+                const state = lastPart.split(/\s+/)[0]; // Just get the state abbreviation
+                cityState = `${city}_${state}`;
+                console.log('Address parts:', addressParts);
+                console.log('City:', city, 'State:', state, 'CityState:', cityState);
+            }
+            
+            // Geocode and build URL with REAL coordinates
+            console.log('About to call buildUrlWithRealCoordinates...');
+            try {
+                buildUrlWithRealCoordinates(address, cityState, formattedAddress, time, filters);
+                console.log('buildUrlWithRealCoordinates called (async)');
+            } catch (error) {
+                console.error('Error calling buildUrlWithRealCoordinates:', error);
+            }
+        }
+
+        // Function to geocode and build the final URL with real coordinates
+        async function buildUrlWithRealCoordinates(address, cityState, formattedAddress, time, filters) {
+            console.log('=== buildUrlWithRealCoordinates called ===');
+            console.log('Address:', address);
+            console.log('CityState:', cityState);
+            
+            const coordinateDisplay = document.getElementById('coordinateDisplay');
+            const coordinateText = document.getElementById('coordinateText');
+            const resultEl = document.getElementById('result');
+            
+            let lat = null;
+            let lng = null;
+            
+            try {
+                console.log('Starting geocode request via Cloudflare Worker...');
+                
+                // Call YOUR Cloudflare Worker (which calls Google securely)
+                const workerUrl = `https://realtor-geocode.lordbizness1234.workers.dev?address=${encodeURIComponent(address)}`;
+                const response = await fetch(workerUrl);
+                
+                console.log('Response status:', response.status, response.ok);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Geocode data:', data);
+                    
+                    if (data.status === 'OK' && data.results && data.results.length > 0) {
+                        lat = data.results[0].geometry.location.lat.toFixed(6);
+                        lng = data.results[0].geometry.location.lng.toFixed(6);
+                        
+                        // Use Google's formatted address for the URL
+                        const googleFormattedAddress = data.results[0].formatted_address;
+                        console.log('Google formatted address:', googleFormattedAddress);
+                        
+                        // Update address to use Google's version
+                        address = googleFormattedAddress;
+                        
+                        // Re-extract city/state from Google's formatted address
+                        // Format: "Street, City, State ZIP, Country"
+                        const googleAddressParts = googleFormattedAddress.split(',').map(s => s.trim());
+                        if (googleAddressParts.length >= 3) {
+                            // City is 3rd from the end (e.g., "Sweetwater")
+                            const city = googleAddressParts[googleAddressParts.length - 3].replace(/\s+/g, '_');
+                            // State/ZIP is 2nd from end (e.g., "TN 37874")
+                            const stateZip = googleAddressParts[googleAddressParts.length - 2].trim();
+                            const state = stateZip.split(/\s+/)[0]; // Just get "TN"
+                            cityState = `${city}_${state}`;
+                        }
+                        
+                        // Re-format address for URL using Google's version
+                        formattedAddress = googleFormattedAddress.replace(/,/g, '_').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9_-]/g, '');
+                        
+                        console.log('SUCCESS - Coordinates:', lat, lng);
+                        coordinateText.innerHTML = `✓ Using real coordinates from Google Maps`;
+                        coordinateDisplay.classList.add('show');
+                    } else {
+                        console.log('ERROR - No geocode results, status:', data.status);
+                        // Geocoding failed - address not found
+                        coordinateText.innerHTML = `<strong>⚠ Address not found</strong><br><small style="color: #dc2626;">Google Maps could not locate this address. Please check spelling or try a different format.</small>`;
+                        coordinateDisplay.classList.add('show');
+                        coordinateDisplay.style.background = '#fee2e2';
+                        coordinateDisplay.style.borderLeftColor = '#dc2626';
+                        resultEl.classList.remove('show');
+                        return; // Stop - don't generate URL
+                    }
+                } else {
+                    console.log('ERROR - API request failed');
+                    throw new Error('Geocoding API unavailable');
+                }
+            } catch (error) {
+                console.log('ERROR - Exception:', error);
+                // Network error or API unavailable
+                coordinateText.innerHTML = `<strong>⚠ Geocoding Failed</strong><br><small style="color: #dc2626;">Network error or API unavailable. Check your internet connection.</small>`;
+                coordinateDisplay.classList.add('show');
+                coordinateDisplay.style.background = '#fee2e2';
+                coordinateDisplay.style.borderLeftColor = '#dc2626';
+                resultEl.classList.remove('show');
+                return; // Stop - don't generate URL
+            }
+            
+            // Only proceed if we have real coordinates
+            if (!lat || !lng) {
+                console.log('ERROR - Missing coordinates');
+                return;
+            }
+            
+            console.log('Building URL...');
+            // Build URL with REAL coordinates
+            const filterString = filters.length > 0 ? filters.join('/') + '/' : '';
+            const commuteString = `commute-${formattedAddress},${lat},${lng},${time},drive,traffic`;
+            
+            generatedUrl = `https://www.realtor.com/realestateandhomes-search/${cityState}/${filterString}${commuteString}`;
+            
+            console.log('Generated URL:', generatedUrl);
+            
+            document.getElementById('urlOutput').textContent = generatedUrl;
+            document.getElementById('realtorLink').href = generatedUrl;
+            
+            // Update the result message with the actual address
+            const resultMessage = document.querySelector('.result p');
+            if (resultMessage) {
+                resultMessage.innerHTML = `<strong>What happens next:</strong> Realtor.com will open with the commute filter active and your address 
+                (<strong style="color: #333;">${address}</strong>) pre-filled. All your filters are already applied!`;
+            }
+            
+            // Reset coordinate display styling in case it was changed to error state
+            coordinateDisplay.style.background = '#fff7ed';
+            coordinateDisplay.style.borderLeftColor = '#f97316';
+            
+            console.log('Showing result section...');
+            resultEl.classList.add('show');
+            console.log('=== DONE ===');
+            
+            // Fetch nearby essentials
+            fetchNearbyEssentials(address, lat, lng);
+        }
+
+        // Function to fetch nearby places
+        async function fetchNearbyEssentials(address, lat, lng) {
+            console.log('=== Fetching nearby essentials ===');
+            
+            const categories = [
+                { type: 'text', query: 'Costco OR "Sam\'s Club" OR "BJ\'s Wholesale"', emoji: '🛒', label: 'Wholesale Club' },
+                { type: 'supermarket', emoji: '🥬', label: 'Grocery Store' },
+                { type: 'gas_station', emoji: '⛽', label: 'Gas Station' },
+                { type: 'school', emoji: '🏫', label: 'School' },
+                { type: 'cafe', emoji: '☕', label: 'Coffee Shop (Independent)' },
+                { type: 'restaurant', emoji: '🍽️', label: 'Restaurant (Non-Fast Food)' },
+                { type: 'text', query: '"ice cream" OR gelato OR "frozen yogurt"', emoji: '🍦', label: 'Ice Cream' }
+            ];
+            
+            const chainExclusions = {
+                cafe: ['starbucks', 'dunkin', 'tim hortons', 'caribou', 'peet\'s coffee', 'dutch bros', 
+                       'shell', 'exxon', 'bp', 'chevron', 'marathon', 'speedway', 'circle k', '7-eleven',
+                       'mcdonald\'s', 'burger king', 'wendy\'s', 'subway'],
+                restaurant: ['mcdonalds', 'burger king', 'wendy\'s', 'taco bell', 'kfc', 'subway', 
+                            'pizza hut', 'domino\'s', 'papa john', 'arby\'s', 'chick-fil-a', 
+                            'popeyes', 'sonic', 'jack in the box', 'whataburger', 'five guys',
+                            'chipotle', 'panda express', 'dairy queen', 'hardee\'s', 'carl\'s jr']
+            };
+            
+            let results = [];
+            
+            for (const category of categories) {
+                try {
+                    let workerUrl;
+                    
+                    // Use text search for wholesale clubs
+                    if (category.type === 'text') {
+                        workerUrl = `https://realtor-geocode.lordbizness1234.workers.dev?endpoint=nearby&lat=${lat}&lng=${lng}&type=text&query=${encodeURIComponent(category.query)}`;
+                    } else {
+                        workerUrl = `https://realtor-geocode.lordbizness1234.workers.dev?endpoint=nearby&lat=${lat}&lng=${lng}&type=${category.type}`;
+                    }
+                    
+                    const response = await fetch(workerUrl);
+                    const data = await response.json();
+                    
+                    if (data.places && data.places.length > 0) {
+                        // Filter out chains for cafe and restaurant
+                        let validPlace = null;
+                        
+                        for (const place of data.places) {
+                            const name = place.displayName.text.toLowerCase();
+                            const exclusions = chainExclusions[category.type] || [];
+                            
+                            // Check if this place matches any exclusion
+                            const isExcluded = exclusions.some(chain => name.includes(chain));
+                            
+                            if (!isExcluded) {
+                                validPlace = place;
+                                break;
+                            }
+                        }
+                        
+                        if (validPlace) {
+                            const placeLat = validPlace.location.latitude;
+                            const placeLng = validPlace.location.longitude;
+                            const distance = calculateDistance(lat, lng, placeLat, placeLng);
+                            
+                            results.push({
+                                emoji: category.emoji,
+                                label: category.label,
+                                name: validPlace.displayName.text,
+                                address: validPlace.formattedAddress,
+                                distance: distance,
+                                url: validPlace.googleMapsUri
+                            });
+                        } else {
+                            results.push({
+                                emoji: category.emoji,
+                                label: category.label,
+                                name: 'Not found within 20 mi (excluding chains)',
+                                distance: null,
+                                url: null
+                            });
+                        }
+                    } else {
+                        results.push({
+                            emoji: category.emoji,
+                            label: category.label,
+                            name: 'Not found within 20 mi',
+                            distance: null,
+                            url: null
+                        });
+                    }
+                } catch (error) {
+                    console.log(`Error fetching ${category.label}:`, error);
+                    results.push({
+                        emoji: category.emoji,
+                        label: category.label,
+                        name: 'Error fetching',
+                        distance: null,
+                        url: null
+                    });
+                }
+            }
+            
+            // Build the text summary with single map link
+            let summary = `📍 Nearby Essentials for ${address}\n\n`;
+            
+            // Build list of places with clickable names
+            for (const result of results) {
+                summary += `${result.emoji} ${result.label}\n`;
+                if (result.distance) {
+                    // Make the place name a clickable link
+                    summary += `<a href="${result.url}" target="_blank" style="color: #667eea; text-decoration: underline;">${result.name}</a> - approximately ${result.distance} mi\n\n`;
+                } else {
+                    summary += `${result.name || 'Not found within 20 mi'}\n\n`;
+                }
+            }
+            
+            // Create single Google Maps URL with multiple markers (no route)
+            let mapUrl = '';
+            
+            // Collect all addresses including the home
+            const allAddresses = [address];
+            const foundPlaces = results.filter(r => r.address);
+            
+            if (foundPlaces.length > 0) {
+                foundPlaces.forEach(p => allAddresses.push(p.address));
+                
+                // Use search query format to show pins without routing
+                const searchQuery = allAddresses.map(addr => encodeURIComponent(addr)).join('+');
+                mapUrl = `https://www.google.com/maps/search/${searchQuery}`;
+                
+                summary += `🗺️ <a href="${mapUrl}" target="_blank" style="color: #667eea; text-decoration: underline;">View all locations on one map</a>`;
+            } else {
+                summary += `🗺️ No locations found to map`;
+                mapUrl = null;
+            }
+            
+            // Create plain text version for clipboard (text message friendly)
+            let plainTextSummary = `📍 Nearby Essentials for ${address}\n\n`;
+            for (const result of results) {
+                plainTextSummary += `${result.emoji} ${result.label}\n`;
+                if (result.distance) {
+                    plainTextSummary += `${result.name} - approximately ${result.distance} mi\n`;
+                    plainTextSummary += `${result.url}\n\n`;
+                } else {
+                    plainTextSummary += `${result.name || 'Not found within 20 mi'}\n\n`;
+                }
+            }
+            if (mapUrl) {
+                plainTextSummary += `🗺️ View all locations on one map:\n${mapUrl}`;
+            } else {
+                plainTextSummary += `🗺️ No locations found to map`;
+            }
+            
+            nearbyText = plainTextSummary; // Plain text with actual URL for clipboard
+            document.getElementById('nearbyContent').innerHTML = summary.replace(/\n/g, '<br>'); // HTML for display
+            document.getElementById('nearbyEssentials').classList.add('show');
+            
+            console.log('=== Nearby essentials loaded ===');
+        }
+
+        // Calculate distance between two lat/lng points in miles
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 3959; // Earth's radius in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            return distance.toFixed(1);
+        }
+
+        function copyNearby() {
+            navigator.clipboard.writeText(nearbyText).then(() => {
+                event.target.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    event.target.textContent = '📋 Copy to Clipboard';
+                }, 2000);
+            });
+        }
+
+        function copyUrl() {
+            navigator.clipboard.writeText(generatedUrl).then(() => {
+                event.target.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    event.target.textContent = '📋 Copy URL';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
