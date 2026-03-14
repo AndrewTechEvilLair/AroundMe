@@ -128,7 +128,7 @@
 <body>
     <div class="container">
         <h1>🏠 Realtor.com Commute Search</h1>
-        <p class="subtitle">v3.0</p>
+        <p class="subtitle">v3.5</p>
         
         <div class="info">
             <strong>How this works:</strong><br>
@@ -165,6 +165,19 @@
                 <strong>🌍 Coordinates Found:</strong>
                 <div id="coordinateText" style="margin-top: 5px; font-family: 'Courier New', monospace;"></div>
             </div>
+
+            <!-- Nearby Essentials Section - Collapsed by default -->
+            <details id="nearbyEssentialsCollapse" style="margin: 20px 0; display: none;">
+                <summary style="cursor: pointer; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9; font-weight: 600; color: #0c4a6e; user-select: none;">
+                    📍 Nearby Essentials <span style="font-weight: normal; color: #64748b; font-size: 13px;">(Click to expand)</span>
+                </summary>
+                <div style="margin-top: 15px; padding: 20px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #667eea;">
+                    <div id="nearbyContent" style="font-family: monospace; font-size: 13px; line-height: 1.8; white-space: pre-wrap;"></div>
+                    <button type="button" onclick="copyNearby()" style="width: auto; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 15px;">
+                        📋 Copy to Clipboard
+                    </button>
+                </div>
+            </details>
             
             <label for="time">Commute Time:</label>
             <select id="time">
@@ -198,33 +211,128 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div>
                     <label for="minBeds">Min Beds:</label>
-                    <input type="number" id="minBeds" value="2" min="0">
+                    <select id="minBeds">
+                        <option value="">Any</option>
+                        <option value="1">1+</option>
+                        <option value="2" selected>2+</option>
+                        <option value="3">3+</option>
+                        <option value="4">4+</option>
+                        <option value="5">5+</option>
+                    </select>
                 </div>
                 <div>
                     <label for="minBaths">Min Baths:</label>
-                    <input type="number" id="minBaths" value="1" min="0" step="0.5">
+                    <select id="minBaths">
+                        <option value="">Any</option>
+                        <option value="1" selected>1+</option>
+                        <option value="1.5">1.5+</option>
+                        <option value="2">2+</option>
+                        <option value="2.5">2.5+</option>
+                        <option value="3">3+</option>
+                    </select>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <label for="minPrice">Min Price:</label>
-                    <input type="number" id="minPrice" placeholder="No min" step="1000">
+            <!-- Price Range Slider -->
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600;">Price Range:</label>
+                
+                <!-- Visual slider display -->
+                <div style="position: relative; height: 50px; margin: 20px 0;">
+                    <!-- Track background -->
+                    <div style="position: absolute; top: 25px; left: 0; right: 0; height: 6px; background: #e5e7eb; border-radius: 3px;"></div>
+                    
+                    <!-- Active range (filled between thumbs) -->
+                    <div id="priceRangeFill" style="position: absolute; top: 25px; height: 6px; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 3px; left: 0%; right: 75%;"></div>
+                    
+                    <!-- Min slider -->
+                    <input type="range" id="minPriceSlider" min="0" max="1000000" step="10000" value="0"
+                        style="position: absolute; width: 100%; height: 6px; top: 25px; -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;">
+                    
+                    <!-- Max slider -->
+                    <input type="range" id="maxPriceSlider" min="0" max="1000000" step="10000" value="250000"
+                        style="position: absolute; width: 100%; height: 6px; top: 25px; -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;">
+                    
+                    <!-- Price labels above sliders -->
+                    <div id="minPriceLabel" style="position: absolute; top: 0; left: 0%; transform: translateX(-50%); font-size: 13px; font-weight: 600; color: #667eea;">$0</div>
+                    <div id="maxPriceLabel" style="position: absolute; top: 0; left: 25%; transform: translateX(-50%); font-size: 13px; font-weight: 600; color: #764ba2;">$250k</div>
                 </div>
-                <div>
-                    <label for="maxPrice">Max Price:</label>
-                    <input type="number" id="maxPrice" value="250000" step="1000">
+                
+                <!-- Number inputs below slider -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                    <div>
+                        <label for="minPrice" style="font-size: 12px; color: #6b7280;">Min Price:</label>
+                        <input type="text" id="minPrice" placeholder="$0" value="$0"
+                            style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label for="maxPrice" style="font-size: 12px; color: #6b7280;">Max Price:</label>
+                        <input type="text" id="maxPrice" value="$250,000"
+                            style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+                    </div>
                 </div>
             </div>
 
+            <style>
+                /* Slider thumb styles */
+                #minPriceSlider::-webkit-slider-thumb,
+                #maxPriceSlider::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    background: white;
+                    border: 3px solid #667eea;
+                    cursor: pointer;
+                    pointer-events: auto;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                    transition: transform 0.1s, box-shadow 0.1s;
+                }
+                
+                #minPriceSlider::-webkit-slider-thumb:hover,
+                #maxPriceSlider::-webkit-slider-thumb:hover {
+                    transform: scale(1.1);
+                    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.4);
+                }
+                
+                #minPriceSlider::-moz-range-thumb,
+                #maxPriceSlider::-moz-range-thumb {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    background: white;
+                    border: 3px solid #667eea;
+                    cursor: pointer;
+                    pointer-events: auto;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                }
+            </style>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div>
-                    <label for="minLotSize">Min Lot (sq ft):</label>
-                    <input type="number" id="minLotSize" placeholder="Any" step="1000">
+                    <label for="minLotSize">Min Lot:</label>
+                    <select id="minLotSize">
+                        <option value="">Any</option>
+                        <option value="4000">4,000 sq ft</option>
+                        <option value="7000">7,000 sq ft</option>
+                        <option value="9000">9,000 sq ft</option>
+                        <option value="10890">0.25 acre</option>
+                        <option value="21780">0.5 acre</option>
+                        <option value="43560">1 acre</option>
+                    </select>
                 </div>
                 <div>
-                    <label for="maxLotSize">Max Lot (sq ft):</label>
-                    <input type="number" id="maxLotSize" value="9000" step="1000">
+                    <label for="maxLotSize">Max Lot:</label>
+                    <select id="maxLotSize">
+                        <option value="">Any</option>
+                        <option value="4000">4,000 sq ft</option>
+                        <option value="7000">7,000 sq ft</option>
+                        <option value="9000" selected>9,000 sq ft</option>
+                        <option value="10890">0.25 acre</option>
+                        <option value="21780">0.5 acre</option>
+                        <option value="43560">1 acre</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -248,13 +356,6 @@
             </details>
         </div>
 
-        <div class="result" id="nearbyEssentials" style="margin-top: 20px;">
-            <h3 style="margin-bottom: 15px;">📍 Nearby Essentials</h3>
-            <div id="nearbyContent" style="font-family: monospace; font-size: 13px; line-height: 1.8; white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;"></div>
-            <button type="button" onclick="copyNearby()" style="width: auto; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                📋 Copy to Clipboard
-            </button>
-        </div>
 
         <!-- Buy Me A Coffee Button -->
         <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
@@ -459,7 +560,7 @@
             document.getElementById('result').classList.remove('show');
             document.getElementById('extractedAddress').classList.remove('show');
             document.getElementById('coordinateDisplay').classList.remove('show');
-            document.getElementById('nearbyEssentials').classList.remove('show');
+            document.getElementById('nearbyEssentialsCollapse').style.display = 'none';
             
             // Reset coordinate display styling
             const coordinateDisplay = document.getElementById('coordinateDisplay');
@@ -490,10 +591,23 @@
                 const propertyType = document.getElementById('propertyType').value;
                 const minBeds = document.getElementById('minBeds').value;
                 const minBaths = document.getElementById('minBaths').value;
-                const minPrice = document.getElementById('minPrice').value;
-                const maxPrice = document.getElementById('maxPrice').value;
-                const minLotSize = document.getElementById('minLotSize').value;
-                const maxLotSize = document.getElementById('maxLotSize').value;
+                const minPrice = parseCurrency(document.getElementById('minPrice').value);
+                const maxPrice = parseCurrency(document.getElementById('maxPrice').value);
+                const minLotSize = parseInt(document.getElementById('minLotSize').value) || 0;
+                const maxLotSize = parseInt(document.getElementById('maxLotSize').value) || 0;
+                
+                // Validate min/max contradictions
+                if (minPrice && maxPrice && minPrice > maxPrice) {
+                    alert('⚠️ Min Price cannot be greater than Max Price');
+                    return;
+                }
+                if (minLotSize && maxLotSize && minLotSize > maxLotSize) {
+                    alert('⚠️ Min Lot Size cannot be greater than Max Lot Size');
+                    return;
+                }
+                
+                // Always hide pending and contingent listings
+                filters.push('pnd-ctg-hide');
                 
                 if (propertyType) filters.push(`type-${propertyType}`);
                 if (minBeds) filters.push(`beds-${minBeds}`);
@@ -504,6 +618,9 @@
                 if (minPrice || maxPrice) {
                     filters.push(`price-${minPrice || 'na'}-${maxPrice || ''}`);
                 }
+            } else {
+                // Even for commute-only, hide pending/contingent
+                filters.push('pnd-ctg-hide');
             }
             
             // Extract city/state for the base path (JUST city and state, not full address)
@@ -585,7 +702,8 @@
                         formattedAddress = googleFormattedAddress.replace(/,/g, '_').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9_-]/g, '');
                         
                         console.log('SUCCESS - Coordinates:', lat, lng);
-                        coordinateText.innerHTML = `✓ Using real coordinates from Google Maps`;
+                        const mapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                        coordinateText.innerHTML = `✓ Coordinates found: <a href="${mapsLink}" target="_blank" style="color: #667eea; text-decoration: underline; font-weight: 600;">${googleFormattedAddress}</a>`;
                         coordinateDisplay.classList.add('show');
                     } else {
                         console.log('ERROR - No geocode results, status:', data.status);
@@ -660,7 +778,7 @@
                 { type: 'school', emoji: '🏫', label: 'School' },
                 { type: 'cafe', emoji: '☕', label: 'Coffee Shop (Independent)' },
                 { type: 'restaurant', emoji: '🍽️', label: 'Restaurant (Non-Fast Food)' },
-                { type: 'text', query: '"ice cream" OR gelato OR "frozen yogurt"', emoji: '🍦', label: 'Ice Cream' }
+                { type: 'text', query: '"ice cream shop" OR "ice cream parlor" OR "Baskin Robbins" OR "Cold Stone" OR "Ben & Jerry\'s" OR gelato OR "frozen custard"', emoji: '🍦', label: 'Ice Cream' }
             ];
             
             const chainExclusions = {
@@ -670,7 +788,10 @@
                 restaurant: ['mcdonalds', 'burger king', 'wendy\'s', 'taco bell', 'kfc', 'subway', 
                             'pizza hut', 'domino\'s', 'papa john', 'arby\'s', 'chick-fil-a', 
                             'popeyes', 'sonic', 'jack in the box', 'whataburger', 'five guys',
-                            'chipotle', 'panda express', 'dairy queen', 'hardee\'s', 'carl\'s jr']
+                            'chipotle', 'panda express', 'dairy queen', 'hardee\'s', 'carl\'s jr'],
+                school: ['daycare', 'day care', 'preschool', 'pre-school', 'pre school', 'montessori', 
+                        'kindercare', 'childcare', 'child care', 'learning center', 'swim school',
+                        'music school', 'dance academy', 'martial arts', 'gymnastics', 'tutor']
             };
             
             let results = [];
@@ -802,7 +923,11 @@
             
             nearbyText = plainTextSummary; // Plain text with actual URL for clipboard
             document.getElementById('nearbyContent').innerHTML = summary.replace(/\n/g, '<br>'); // HTML for display
-            document.getElementById('nearbyEssentials').classList.add('show');
+            
+            // Show the nearby essentials section (but keep it collapsed)
+            const nearbyCollapse = document.getElementById('nearbyEssentialsCollapse');
+            nearbyCollapse.style.display = 'block';
+            // Don't auto-expand - let user click to open
             
             console.log('=== Nearby essentials loaded ===');
         }
@@ -837,6 +962,90 @@
                 }, 2000);
             });
         }
+
+        // Price slider synchronization
+        function formatPrice(value) {
+            if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M';
+            if (value >= 1000) return '$' + (value / 1000) + 'k';
+            return '$' + value;
+        }
+
+        function formatCurrency(value) {
+            return '$' + value.toLocaleString('en-US');
+        }
+
+        function parseCurrency(str) {
+            // Remove all non-digits
+            const cleaned = str.replace(/[^\d]/g, '');
+            return parseInt(cleaned) || 0;
+        }
+
+        function updateSliderFill() {
+            const min = parseInt(document.getElementById('minPriceSlider').value);
+            const max = parseInt(document.getElementById('maxPriceSlider').value);
+            const minPercent = (min / 1000000) * 100;
+            const maxPercent = (max / 1000000) * 100;
+            
+            const fill = document.getElementById('priceRangeFill');
+            fill.style.left = minPercent + '%';
+            fill.style.right = (100 - maxPercent) + '%';
+            
+            // Update labels
+            document.getElementById('minPriceLabel').style.left = minPercent + '%';
+            document.getElementById('minPriceLabel').textContent = formatPrice(min);
+            
+            document.getElementById('maxPriceLabel').style.left = maxPercent + '%';
+            document.getElementById('maxPriceLabel').textContent = formatPrice(max);
+        }
+
+        // Sync sliders with input fields
+        document.getElementById('minPriceSlider').addEventListener('input', function() {
+            let min = parseInt(this.value);
+            let max = parseInt(document.getElementById('maxPriceSlider').value);
+            
+            // Don't let min exceed max
+            if (min > max) {
+                min = max;
+                this.value = min;
+            }
+            
+            document.getElementById('minPrice').value = formatCurrency(min);
+            updateSliderFill();
+        });
+
+        document.getElementById('maxPriceSlider').addEventListener('input', function() {
+            let max = parseInt(this.value);
+            let min = parseInt(document.getElementById('minPriceSlider').value);
+            
+            // Don't let max go below min
+            if (max < min) {
+                max = min;
+                this.value = max;
+            }
+            
+            document.getElementById('maxPrice').value = formatCurrency(max);
+            updateSliderFill();
+        });
+
+        // Sync input fields with sliders
+        document.getElementById('minPrice').addEventListener('blur', function() {
+            let value = parseCurrency(this.value);
+            if (value > 1000000) value = 1000000;
+            this.value = formatCurrency(value);
+            document.getElementById('minPriceSlider').value = value;
+            updateSliderFill();
+        });
+
+        document.getElementById('maxPrice').addEventListener('blur', function() {
+            let value = parseCurrency(this.value);
+            if (value > 1000000) value = 1000000;
+            this.value = formatCurrency(value);
+            document.getElementById('maxPriceSlider').value = value;
+            updateSliderFill();
+        });
+
+        // Initialize on load
+        updateSliderFill();
     </script>
 </body>
 </html>
